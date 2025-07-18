@@ -14,11 +14,10 @@ ROLE_NAME="TerraformRunnerRole"
 # ----------------------------
 # STEP 1: Update & install dependencies (smart check)
 # ----------------------------
-echo "[1/6] Installing Terraform and dependencies..."
+echo "[1/7] Installing Terraform and dependencies..."
 
 sudo apt-get update -y
 
-# Only install missing packages
 ESSENTIAL_PACKAGES=(unzip curl gnupg software-properties-common)
 TO_INSTALL=()
 
@@ -51,7 +50,7 @@ terraform -version
 # ----------------------------
 # STEP 2: Create S3 bucket
 # ----------------------------
-echo "[2/6] Creating S3 bucket: $BUCKET_NAME..."
+echo "[2/7] Creating S3 bucket: $BUCKET_NAME..."
 
 if [[ "$AWS_REGION" == "us-east-1" ]]; then
   aws s3api create-bucket \
@@ -64,10 +63,19 @@ else
     --create-bucket-configuration LocationConstraint="$AWS_REGION"
 fi
 
+# Save bucket name to ~/projects/s3_bucket.txt
+PROJECT_DIR="$HOME/projects"
+OUTPUT_FILE="$PROJECT_DIR/s3_bucket.txt"
+
+mkdir -p "$PROJECT_DIR"
+echo "$BUCKET_NAME" > "$OUTPUT_FILE"
+
+echo "📦 S3 bucket name saved to: $OUTPUT_FILE"
+
 # ----------------------------
 # STEP 3: Enable versioning
 # ----------------------------
-echo "[3/6] Enabling versioning on bucket..."
+echo "[3/7] Enabling versioning on bucket..."
 
 aws s3api put-bucket-versioning \
   --bucket "$BUCKET_NAME" \
@@ -76,7 +84,7 @@ aws s3api put-bucket-versioning \
 # ----------------------------
 # STEP 4: Create DynamoDB table
 # ----------------------------
-echo "[4/6] Creating DynamoDB table: $DYNAMODB_TABLE..."
+echo "[4/7] Creating DynamoDB table: $DYNAMODB_TABLE..."
 
 aws dynamodb create-table \
   --table-name "$DYNAMODB_TABLE" \
@@ -88,7 +96,7 @@ aws dynamodb create-table \
 # ----------------------------
 # STEP 5: Wait for DynamoDB table to be active
 # ----------------------------
-echo "[5/6] Waiting for DynamoDB table to become ACTIVE..."
+echo "[5/7] Waiting for DynamoDB table to become ACTIVE..."
 
 aws dynamodb wait table-exists \
   --table-name "$DYNAMODB_TABLE" \
@@ -138,6 +146,7 @@ echo "---------------------------------------------"
 # STEP 7: List IAM policies attached to TerraformRunnerRole
 # ----------------------------
 echo ""
-echo "[6/6] Listing IAM policies attached to role: $ROLE_NAME"
+echo "[7/7] Listing IAM policies attached to role: $ROLE_NAME"
+
 aws iam list-attached-role-policies \
   --role-name "$ROLE_NAME"
